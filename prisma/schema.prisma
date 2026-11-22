@@ -1,0 +1,283 @@
+// Prisma Schema for PERFAI Enterprise Website
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RoleType {
+  SUPER_ADMIN
+  ADMIN
+  SALES_MANAGER
+  SALES_EXECUTIVE
+  CONTENT_MANAGER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  MEETING_SCHEDULED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum LeadPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ProductAvailability {
+  AVAILABLE
+  PILOT
+  COMING_SOON
+  UNDER_DEVELOPMENT
+}
+
+model Profile {
+  id         String   @id @default(uuid())
+  supabaseId String?  @unique
+  email      String   @unique
+  fullName   String
+  role       RoleType @default(SALES_EXECUTIVE)
+  avatarUrl  String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  assignedLeads  Lead[]         @relation("AssignedLeads")
+  leadActivities LeadActivity[]
+  auditLogs      AuditLog[]
+
+  @@map("profiles")
+}
+
+model Company {
+  id        String    @id @default(uuid())
+  name      String
+  domain    String?
+  country   String?
+  industry  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  leads     Lead[]
+  contacts  Contact[]
+
+  @@index([name])
+  @@map("companies")
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  fullName  String
+  email     String
+  phone     String?
+  jobTitle  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("contacts")
+}
+
+model Lead {
+  id              String       @id @default(uuid())
+  leadReference   String       @unique
+  fullName        String
+  email           String
+  phone           String?
+  companyName     String?
+  country         String?
+  jobTitle        String?
+  industry        String?
+  productInterest String?
+  message         String?
+  source          String       @default("website")
+  status          LeadStatus   @default(NEW)
+  priority        LeadPriority @default(NORMAL)
+  assignedTo      String?
+  assignedUser    Profile?     @relation("AssignedLeads", fields: [assignedTo], references: [id], onDelete: SetNull)
+  companyId       String?
+  company         Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  consentAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  activities LeadActivity[]
+
+  @@index([email])
+  @@index([status])
+  @@index([assignedTo])
+  @@index([createdAt])
+  @@index([companyName])
+  @@map("leads")
+}
+
+model LeadActivity {
+  id           String   @id @default(uuid())
+  leadId       String
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         Profile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  activityType String
+  description  String
+  createdAt    DateTime @default(now())
+
+  @@index([leadId])
+  @@map("lead_activities")
+}
+
+model Product {
+  id           String              @id @default(uuid())
+  name         String
+  slug         String              @unique
+  category     String?
+  headline     String?
+  tagline      String?
+  description  String
+  availability ProductAvailability @default(COMING_SOON)
+  isFeatured   Boolean             @default(false)
+  isPublished  Boolean             @default(true)
+  specs        Json?
+  features     Json?
+  metaTitle    String?
+  metaDesc     String?
+  orderIndex   Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([slug])
+  @@map("products")
+}
+
+model Industry {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String
+  challenges  Json?
+  solutions   Json?
+  outcomes    Json?
+  isPublished Boolean  @default(true)
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@map("industries")
+}
+
+model CaseStudy {
+  id                String   @id @default(uuid())
+  title             String
+  slug              String   @unique
+  industry          String
+  location          String?
+  assetScope        String
+  deploymentStatus  String
+  measurementPeriod String
+  baseline          String
+  actualResults     Json
+  modelledSavings   Json?
+  methodologyNotes  String?
+  isPublished       Boolean  @default(true)
+  isFeatured        Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([slug])
+  @@map("case_studies")
+}
+
+model Resource {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  type        String
+  description String?
+  fileUrl     String?
+  fileSize    String?
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@map("resources")
+}
+
+model PageContent {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  sections  Json
+  metaTitle String?
+  metaDesc  String?
+  updatedAt DateTime @updatedAt
+
+  @@map("pages")
+}
+
+model Media {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  mimeType  String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+
+  @@map("media")
+}
+
+model EmailLog {
+  id           String    @id @default(uuid())
+  recipient    String
+  subject      String
+  template     String
+  status       String
+  errorMessage String?
+  retryCount   Int       @default(0)
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([recipient])
+  @@index([status])
+  @@map("email_logs")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       Profile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SiteSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_settings")
+}
