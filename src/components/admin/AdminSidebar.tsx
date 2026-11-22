@@ -6,6 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
+  Kanban,
+  CheckSquare,
   Building2,
   Package,
   Layers,
@@ -39,7 +41,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const navItems = [
     { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Leads Pipeline', href: '/admin/leads', icon: Users },
+    { label: 'Pipeline Kanban', href: '/admin/leads/pipeline', icon: Kanban },
+    { label: 'Leads Table', href: '/admin/leads', icon: Users },
+    { label: 'My Tasks', href: '/admin/tasks', icon: CheckSquare },
     { label: 'Contacts', href: '/admin/contacts', icon: Building2 },
     { label: 'Products', href: '/admin/products', icon: Package },
     { label: 'Industries', href: '/admin/industries', icon: Layers },
@@ -71,7 +75,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-170px)]">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname?.startsWith(item.href));
+            const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && item.href !== '/admin/leads' && pathname?.startsWith(item.href));
 
             return (
               <Link
