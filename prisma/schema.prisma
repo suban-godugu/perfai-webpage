@@ -1,283 +1,359 @@
-// Prisma Schema for PERFAI Enterprise Website
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-enum RoleType {
+enum Role {
   SUPER_ADMIN
-  ADMIN
-  SALES_MANAGER
-  SALES_EXECUTIVE
-  CONTENT_MANAGER
+  SALES
+  EDITOR
+  VIEWER
 }
 
 enum LeadStatus {
   NEW
   CONTACTED
   QUALIFIED
-  MEETING_SCHEDULED
-  PROPOSAL_SENT
+  ASSESSMENT_SCHEDULED
+  PROPOSAL
   NEGOTIATION
   WON
   LOST
+  NURTURE
 }
 
 enum LeadPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
+  HOT
+  WARM
+  COLD
 }
 
-enum ProductAvailability {
-  AVAILABLE
-  PILOT
-  COMING_SOON
-  UNDER_DEVELOPMENT
+enum LeadSource {
+  ASSESSMENT_FORM
+  CONTACT_FORM
+  CALCULATOR
+  RESOURCE_DOWNLOAD
+  NEWSLETTER
+  COMPUTESHIELD_WAITLIST
+  PARTNER_FORM
+  MANUAL
+  IMPORT
 }
 
-model Profile {
-  id         String   @id @default(uuid())
-  supabaseId String?  @unique
-  email      String   @unique
-  fullName   String
-  role       RoleType @default(SALES_EXECUTIVE)
-  avatarUrl  String?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  assignedLeads  Lead[]         @relation("AssignedLeads")
-  leadActivities LeadActivity[]
-  auditLogs      AuditLog[]
-
-  @@map("profiles")
+enum Region {
+  INDIA
+  INTERNATIONAL
 }
 
-model Company {
-  id        String    @id @default(uuid())
-  name      String
-  domain    String?
-  country   String?
-  industry  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  leads     Lead[]
-  contacts  Contact[]
-
-  @@index([name])
-  @@map("companies")
+enum RoleType {
+  OWNER
+  ASSET_MANAGER
+  FACILITIES
+  ESG_SUSTAINABILITY
+  ENERGY
+  DEVELOPER
+  CONSULTANT
+  OTHER
 }
 
-model Contact {
-  id        String   @id @default(uuid())
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  fullName  String
-  email     String
-  phone     String?
-  jobTitle  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum AssetType {
+  OFFICE
+  HOSPITALITY
+  HEALTHCARE
+  RETAIL_MALL
+  DATA_CENTRE
+  EDUCATION_CAMPUS
+  INDUSTRIAL
+  MIXED_USE
+  RESIDENTIAL_PORTFOLIO
+  OTHER
+}
 
-  @@index([email])
-  @@map("contacts")
+enum Challenge {
+  ENERGY_COST
+  DEMAND_CHARGES
+  GREEN_RATING
+  MAINTENANCE
+  GRID_FLEXIBILITY
+  COMPUTE_CAPACITY
+  RELIABILITY
+  OTHER
+}
+
+enum Solution {
+  ATRIA
+  BUILDINGSHIELD
+  GRIDSHIELD
+  COMPUTESHIELD
+}
+
+enum ActivityType {
+  CREATED
+  STATUS_CHANGED
+  ASSIGNED
+  NOTE_ADDED
+  EMAIL_SENT
+  EMAIL_RECEIVED
+  CALL_LOGGED
+  MEETING_LOGGED
+  TASK_CREATED
+  TASK_COMPLETED
+  SCORE_CHANGED
+  EDITED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EvidenceLevel {
+  MEASURED
+  MODELLED
+  PROJECTED
+  INDICATIVE
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  name         String
+  passwordHash String
+  role         Role           @default(SALES)
+  isActive     Boolean        @default(true)
+  regions      Region[]
+  lastLoginAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  leads        Lead[]         @relation("LeadAssignee")
+  activities   LeadActivity[]
+  notes        LeadNote[]
+  tasks        Task[]         @relation("TaskAssignee")
+  auditLogs    AuditLog[]
 }
 
 model Lead {
-  id              String       @id @default(uuid())
-  leadReference   String       @unique
-  fullName        String
-  email           String
-  phone           String?
-  companyName     String?
-  country         String?
-  jobTitle        String?
-  industry        String?
-  productInterest String?
-  message         String?
-  source          String       @default("website")
-  status          LeadStatus   @default(NEW)
-  priority        LeadPriority @default(NORMAL)
-  assignedTo      String?
-  assignedUser    Profile?     @relation("AssignedLeads", fields: [assignedTo], references: [id], onDelete: SetNull)
-  companyId       String?
-  company         Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  consentAt       DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  activities LeadActivity[]
+  id               String           @id @default(cuid())
+  fullName         String
+  email            String
+  phone            String?
+  roleType         RoleType?
+  jobTitle         String?
+  organisation     String?
+  assetType        AssetType?
+  scaleDescription String?
+  buildingCount    Int?
+  floorAreaSqm     Int?
+  challenge        Challenge?
+  solutions        Solution[]
+  region           Region           @default(INDIA)
+  country          String?
+  city             String?
+  message          String?
+  status           LeadStatus       @default(NEW)
+  priority         LeadPriority     @default(COLD)
+  score            Int              @default(0)
+  source           LeadSource
+  estimatedValue   Decimal?         @db.Decimal(14, 2)
+  currency         String           @default("INR")
+  lostReason       String?
+  wonAt            DateTime?
+  closedAt         DateTime?
+  firstContactedAt DateTime?
+  // attribution
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  referrer         String?
+  landingPage      String?
+  // compliance
+  consentAt        DateTime
+  consentVersion   String
+  ipHash           String?
+  userAgent        String?
+  // relations
+  assigneeId       String?
+  assignee         User?            @relation("LeadAssignee", fields: [assigneeId], references: [id])
+  activities       LeadActivity[]
+  notes            LeadNote[]
+  tasks            Task[]
+  tags             LeadTag[]
+  submissions      FormSubmission[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
 
   @@index([email])
-  @@index([status])
-  @@index([assignedTo])
-  @@index([createdAt])
-  @@index([companyName])
-  @@map("leads")
+  @@index([status, priority])
+  @@index([assigneeId, status])
+  @@index([region, createdAt])
+  @@index([source, createdAt])
+}
+
+model FormSubmission {
+  id        String     @id @default(cuid())
+  leadId    String?
+  lead      Lead?      @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  formType  LeadSource
+  payload   Json
+  createdAt DateTime   @default(now())
+
+  @@index([formType, createdAt])
 }
 
 model LeadActivity {
-  id           String   @id @default(uuid())
-  leadId       String
-  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  userId       String?
-  user         Profile? @relation(fields: [userId], references: [id], onDelete: SetNull)
-  activityType String
-  description  String
-  createdAt    DateTime @default(now())
+  id        String       @id @default(cuid())
+  leadId    String
+  lead      Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type      ActivityType
+  actorId   String?
+  actor     User?        @relation(fields: [actorId], references: [id])
+  data      Json?
+  createdAt DateTime     @default(now())
 
-  @@index([leadId])
-  @@map("lead_activities")
+  @@index([leadId, createdAt])
 }
 
-model Product {
-  id           String              @id @default(uuid())
-  name         String
-  slug         String              @unique
-  category     String?
-  headline     String?
-  tagline      String?
-  description  String
-  availability ProductAvailability @default(COMING_SOON)
-  isFeatured   Boolean             @default(false)
-  isPublished  Boolean             @default(true)
-  specs        Json?
-  features     Json?
-  metaTitle    String?
-  metaDesc     String?
-  orderIndex   Int                 @default(0)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-
-  @@index([slug])
-  @@map("products")
+model LeadNote {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
 }
 
-model Industry {
-  id          String   @id @default(uuid())
-  name        String
-  slug        String   @unique
-  description String
-  challenges  Json?
-  solutions   Json?
-  outcomes    Json?
-  isPublished Boolean  @default(true)
-  orderIndex  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Task {
+  id          String    @id @default(cuid())
+  leadId      String?
+  lead        Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  assigneeId  String
+  assignee    User      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  title       String
+  dueAt       DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
 
-  @@index([slug])
-  @@map("industries")
+  @@index([assigneeId, completedAt, dueAt])
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  color String    @default("#64748B")
+  leads LeadTag[]
+}
+
+model LeadTag {
+  leadId String
+  tagId  String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([leadId, tagId])
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  region         Region?
+  consentAt      DateTime
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
 }
 
 model CaseStudy {
-  id                String   @id @default(uuid())
-  title             String
-  slug              String   @unique
-  industry          String
-  location          String?
-  assetScope        String
-  deploymentStatus  String
-  measurementPeriod String
-  baseline          String
-  actualResults     Json
-  modelledSavings   Json?
-  methodologyNotes  String?
-  isPublished       Boolean  @default(true)
-  isFeatured        Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([slug])
-  @@map("case_studies")
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  title         String
+  summary       String
+  body          String
+  assetType     AssetType?
+  country       String
+  scope         String
+  period        String?
+  baseline      String?
+  evidence      EvidenceLevel
+  metrics       Json
+  isSenatriaRef Boolean       @default(true)
+  sourceUrl     String?
+  heroImage     String?
+  status        ContentStatus @default(DRAFT)
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Resource {
-  id          String   @id @default(uuid())
+  id          String        @id @default(cuid())
+  slug        String        @unique
   title       String
-  slug        String   @unique
+  excerpt     String
+  body        String
   type        String
-  description String?
   fileUrl     String?
-  fileSize    String?
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([slug])
-  @@map("resources")
+  isGated     Boolean       @default(false)
+  seoTitle    String?
+  seoDesc     String?
+  ogImage     String?
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
-model PageContent {
-  id        String   @id @default(uuid())
-  slug      String   @unique
-  title     String
-  sections  Json
-  metaTitle String?
-  metaDesc  String?
-  updatedAt DateTime @updatedAt
-
-  @@map("pages")
-}
-
-model Media {
-  id        String   @id @default(uuid())
-  name      String
-  url       String
-  mimeType  String
-  sizeBytes Int
-  createdAt DateTime @default(now())
-
-  @@map("media")
-}
-
-model EmailLog {
-  id           String    @id @default(uuid())
-  recipient    String
-  subject      String
-  template     String
-  status       String
-  errorMessage String?
-  retryCount   Int       @default(0)
-  sentAt       DateTime?
-  createdAt    DateTime  @default(now())
-
-  @@index([recipient])
-  @@index([status])
-  @@map("email_logs")
-}
-
-model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?
-  user       Profile? @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action     String
-  entityType String
-  entityId   String?
-  details    Json?
-  ipAddress  String?
-  createdAt  DateTime @default(now())
-
-  @@index([userId])
-  @@index([action])
-  @@index([createdAt])
-  @@map("audit_logs")
+model Faq {
+  id       String        @id @default(cuid())
+  question String
+  answer   String
+  page     String        @default("home")
+  position Int           @default(0)
+  status   ContentStatus @default(PUBLISHED)
 }
 
 model SiteSetting {
-  id          String   @id @default(uuid())
-  key         String   @unique
-  value       String
-  description String?
-  updatedAt   DateTime @updatedAt
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
 
-  @@map("site_settings")
+model Webhook {
+  id        String   @id @default(cuid())
+  url       String
+  secret    String
+  events    String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  template  String
+  leadId    String?
+  status    String
+  error     String?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String?
+  entityId  String?
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

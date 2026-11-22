@@ -1,43 +1,44 @@
 import { prisma } from './prisma';
-import { Lead, LeadActivity, LeadStatus, LeadPriority } from '@/types';
+import { LeadStatus, LeadPriority, LeadSource, Solution, Region, ActivityType } from '@prisma/client';
 
-// In-memory persistent fallback if PostgreSQL is initializing or in dev without credentials
-let fallbackLeads: Lead[] = [
+// In-memory fallback if PostgreSQL connection is pending or in offline dev
+let fallbackLeads: any[] = [
   {
     id: 'lead-sample-1',
     leadReference: 'PRF-2026-00101',
     fullName: 'Vikram Singhania',
     email: 'v.singhania@apexreit.com',
     phone: '+91 98200 12345',
+    organisation: 'Apex Commercial REIT',
     companyName: 'Apex Commercial REIT',
     country: 'India',
+    region: 'INDIA',
     jobTitle: 'VP of Engineering & Sustainability',
+    assetType: 'OFFICE',
     industry: 'Commercial Real Estate',
+    solutions: ['BUILDINGSHIELD'],
     productInterest: 'BuildingShield',
     message: 'Interested in evaluating BuildingShield across 4 Grade-A commercial towers in CyberCity Gurgaon (1.6M sq.ft total chiller plant capacity: 3,600 TR).',
-    source: 'homepage_assessment_cta',
+    source: 'ASSESSMENT_FORM',
     status: 'QUALIFIED',
-    priority: 'HIGH',
+    priority: 'HOT',
+    score: 85,
+    assigneeId: 'user-sales-director',
     assignedTo: 'user-sales-director',
     assignedUser: { fullName: 'Arjun Rao (Sales Director)', email: 'sales@perfai.in' },
     consentAt: new Date().toISOString(),
+    consentVersion: 'v1.0-dpdp',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
     updatedAt: new Date().toISOString(),
     activities: [
       {
         id: 'act-1',
         leadId: 'lead-sample-1',
-        activityType: 'CREATION',
+        type: 'CREATED',
+        activityType: 'CREATED',
+        data: { desc: 'Lead generated from Homepage Assessment CTA' },
         description: 'Lead generated from Homepage Assessment CTA',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-      },
-      {
-        id: 'act-2',
-        leadId: 'lead-sample-1',
-        userId: 'user-sales-director',
-        activityType: 'STATUS_CHANGE',
-        description: 'Status advanced to QUALIFIED after reviewing BMS chiller capacity specifications.',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
       },
     ],
   },
@@ -47,64 +48,36 @@ let fallbackLeads: Lead[] = [
     fullName: 'Claire Beaumont',
     email: 'c.beaumont@marriott-group-example.com',
     phone: '+44 20 7946 0912',
+    organisation: 'Grand Horizon Hospitality',
     companyName: 'Grand Horizon Hospitality',
     country: 'United Kingdom',
+    region: 'INTERNATIONAL',
     jobTitle: 'Director of Asset Operations',
+    assetType: 'HOSPITALITY',
     industry: 'Hospitality',
+    solutions: ['BUILDINGSHIELD'],
     productInterest: 'BuildingShield',
     message: 'Reviewing 5-star hotel case study. We operate 3 luxury resort properties with severe summer peak energy tariffs.',
-    source: 'case_study_page',
-    status: 'MEETING_SCHEDULED',
-    priority: 'URGENT',
+    source: 'CONTACT_FORM',
+    status: 'ASSESSMENT_SCHEDULED',
+    priority: 'HOT',
+    score: 90,
+    assigneeId: 'user-sales-exec',
     assignedTo: 'user-sales-exec',
     assignedUser: { fullName: 'Rajesh Nair (Enterprise AE)', email: 'rajesh@perfai.in' },
     consentAt: new Date().toISOString(),
+    consentVersion: 'v1.0-dpdp',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
     updatedAt: new Date().toISOString(),
     activities: [
       {
-        id: 'act-3',
+        id: 'act-2',
         leadId: 'lead-sample-2',
-        activityType: 'CREATION',
-        description: 'Lead received from Case Study page enquiry.',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
-      },
-      {
-        id: 'act-4',
-        leadId: 'lead-sample-2',
-        userId: 'user-sales-exec',
-        activityType: 'MEETING',
-        description: 'Introductory feasibility video conference scheduled with Chief Engineer.',
+        type: 'MEETING_LOGGED',
+        activityType: 'MEETING_LOGGED',
+        data: { desc: 'Introductory feasibility conference scheduled' },
+        description: 'Introductory feasibility conference scheduled',
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-      },
-    ],
-  },
-  {
-    id: 'lead-sample-3',
-    leadReference: 'PRF-2026-00103',
-    fullName: 'Ananya Deshmukh',
-    email: 'ananya@cloudhyper-dc.in',
-    phone: '+91 99301 55432',
-    companyName: 'CloudHyper Data Centres',
-    country: 'India',
-    jobTitle: 'Head of Mission Critical Facilities',
-    industry: 'Data Centres',
-    productInterest: 'ATRIA',
-    message: 'Exploring ATRIA for PUE optimization across 15MW hyperscale campus in Navi Mumbai.',
-    source: 'technology_page_cta',
-    status: 'NEW',
-    priority: 'HIGH',
-    assignedTo: null,
-    consentAt: new Date().toISOString(),
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    updatedAt: new Date().toISOString(),
-    activities: [
-      {
-        id: 'act-5',
-        leadId: 'lead-sample-3',
-        activityType: 'CREATION',
-        description: 'Enquiry submitted via Technology Architecture page.',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
       },
     ],
   },
@@ -114,19 +87,30 @@ let fallbackAuditLogs: any[] = [
   {
     id: 'audit-1',
     action: 'LEAD_STATUS_UPDATE',
+    entity: 'Lead',
     entityType: 'Lead',
     entityId: 'lead-sample-1',
+    meta: { from: 'NEW', to: 'QUALIFIED' },
     details: { oldStatus: 'NEW', newStatus: 'QUALIFIED' },
+    ip: '127.0.0.1',
     ipAddress: '127.0.0.1',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
   },
 ];
 
-// Helper to generate reference format: PRF-YYYY-XXXXX
 export function generateLeadReference(): string {
   const year = new Date().getFullYear();
   const randomNum = Math.floor(10000 + Math.random() * 90000);
   return `PRF-${year}-${randomNum}`;
+}
+
+function mapSolution(input?: string | null): Solution[] {
+  if (!input) return [Solution.BUILDINGSHIELD];
+  const upper = input.toUpperCase();
+  if (upper.includes('ATRIA')) return [Solution.ATRIA];
+  if (upper.includes('GRID')) return [Solution.GRIDSHIELD];
+  if (upper.includes('COMPUTE')) return [Solution.COMPUTESHIELD];
+  return [Solution.BUILDINGSHIELD];
 }
 
 export async function createLead(data: {
@@ -143,29 +127,30 @@ export async function createLead(data: {
   consentAt: Date;
 }) {
   const leadReference = generateLeadReference();
+  const region = data.country?.toLowerCase() === 'india' ? Region.INDIA : Region.INTERNATIONAL;
+  const solutions = mapSolution(data.productInterest);
 
   try {
-    // Attempt Prisma database write
     const newLead = await prisma.lead.create({
       data: {
-        leadReference,
         fullName: data.fullName,
         email: data.email,
         phone: data.phone || null,
-        companyName: data.companyName || null,
+        organisation: data.companyName || null,
         country: data.country || null,
         jobTitle: data.jobTitle || null,
-        industry: data.industry || null,
-        productInterest: data.productInterest || null,
+        solutions,
+        region,
         message: data.message || null,
-        source: data.source,
+        source: LeadSource.ASSESSMENT_FORM,
         consentAt: data.consentAt,
-        status: 'NEW',
-        priority: 'NORMAL',
+        consentVersion: 'v1.0-dpdp',
+        status: LeadStatus.NEW,
+        priority: LeadPriority.WARM,
         activities: {
           create: {
-            activityType: 'CREATION',
-            description: `Enquiry submitted via ${data.source}`,
+            type: ActivityType.CREATED,
+            data: { desc: `Enquiry submitted via ${data.source}` },
           },
         },
       },
@@ -174,34 +159,38 @@ export async function createLead(data: {
       },
     });
 
-    return newLead;
+    return { ...newLead, leadReference };
   } catch (err) {
-    // Graceful fallback to persistent memory store if database is offline or unconfigured
-    console.warn('Prisma DB unavailable, recording lead in fallback memory store:', err);
+    console.warn('Prisma DB unavailable, storing in fallback memory store:', err);
 
-    const memoryLead: Lead = {
+    const memoryLead = {
       id: `lead-${Date.now()}`,
       leadReference,
       fullName: data.fullName,
       email: data.email,
       phone: data.phone || null,
+      organisation: data.companyName || null,
       companyName: data.companyName || null,
       country: data.country || null,
+      region,
       jobTitle: data.jobTitle || null,
       industry: data.industry || null,
-      productInterest: data.productInterest || null,
+      solutions,
+      productInterest: data.productInterest || 'BuildingShield',
       message: data.message || null,
       source: data.source,
       status: 'NEW',
-      priority: 'NORMAL',
+      priority: 'WARM',
       consentAt: data.consentAt.toISOString(),
+      consentVersion: 'v1.0-dpdp',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       activities: [
         {
           id: `act-${Date.now()}`,
           leadId: `lead-${Date.now()}`,
-          activityType: 'CREATION',
+          type: 'CREATED',
+          activityType: 'CREATED',
           description: `Enquiry submitted via ${data.source}`,
           createdAt: new Date().toISOString(),
         },
@@ -223,17 +212,16 @@ export async function getLeads(options: {
   try {
     const where: any = {};
     if (options.status && options.status !== 'ALL') {
-      where.status = options.status;
+      where.status = options.status as LeadStatus;
     }
     if (options.priority && options.priority !== 'ALL') {
-      where.priority = options.priority;
+      where.priority = options.priority as LeadPriority;
     }
     if (options.search) {
       where.OR = [
         { fullName: { contains: options.search, mode: 'insensitive' } },
         { email: { contains: options.search, mode: 'insensitive' } },
-        { companyName: { contains: options.search, mode: 'insensitive' } },
-        { leadReference: { contains: options.search, mode: 'insensitive' } },
+        { organisation: { contains: options.search, mode: 'insensitive' } },
       ];
     }
 
@@ -245,15 +233,23 @@ export async function getLeads(options: {
         orderBy: { createdAt: 'desc' },
         include: {
           activities: { orderBy: { createdAt: 'desc' } },
-          assignedUser: { select: { fullName: true, email: true } },
+          assignee: { select: { name: true, email: true } },
         },
       }),
       prisma.lead.count({ where }),
     ]);
 
-    return { leads, totalCount };
+    // Map Prisma models to view structure
+    const mappedLeads = leads.map((l) => ({
+      ...l,
+      leadReference: l.id.slice(0, 12).toUpperCase(),
+      companyName: l.organisation,
+      productInterest: l.solutions.length > 0 ? l.solutions.join(', ') : 'BuildingShield',
+      assignedUser: l.assignee ? { fullName: l.assignee.name, email: l.assignee.email } : null,
+    }));
+
+    return { leads: mappedLeads, totalCount };
   } catch (err) {
-    // Fallback store
     let filtered = [...fallbackLeads];
 
     if (options.status && options.status !== 'ALL') {
@@ -268,8 +264,7 @@ export async function getLeads(options: {
         (l) =>
           l.fullName.toLowerCase().includes(q) ||
           l.email.toLowerCase().includes(q) ||
-          (l.companyName && l.companyName.toLowerCase().includes(q)) ||
-          l.leadReference.toLowerCase().includes(q)
+          (l.companyName && l.companyName.toLowerCase().includes(q))
       );
     }
 
@@ -287,12 +282,20 @@ export async function getLeadById(id: string) {
       where: { id },
       include: {
         activities: { orderBy: { createdAt: 'desc' } },
-        assignedUser: { select: { fullName: true, email: true } },
+        assignee: { select: { name: true, email: true } },
       },
     });
-    if (lead) return lead;
+    if (lead) {
+      return {
+        ...lead,
+        leadReference: lead.id.slice(0, 12).toUpperCase(),
+        companyName: lead.organisation,
+        productInterest: lead.solutions.length > 0 ? lead.solutions.join(', ') : 'BuildingShield',
+        assignedUser: lead.assignee ? { fullName: lead.assignee.name, email: lead.assignee.email } : null,
+      };
+    }
   } catch {
-    // Ignore and fallback
+    // Fallback
   }
 
   return fallbackLeads.find((l) => l.id === id) || null;
@@ -301,30 +304,30 @@ export async function getLeadById(id: string) {
 export async function updateLead(
   id: string,
   updates: {
-    status?: LeadStatus;
-    priority?: LeadPriority;
+    status?: any;
+    priority?: any;
     assignedTo?: string | null;
     note?: string;
     updatedBy?: string;
   }
 ) {
   try {
+    const data: any = {};
+    if (updates.status) data.status = updates.status as LeadStatus;
+    if (updates.priority) data.priority = updates.priority as LeadPriority;
+    if (updates.assignedTo !== undefined) data.assigneeId = updates.assignedTo;
+
     const lead = await prisma.lead.update({
       where: { id },
-      data: {
-        ...(updates.status ? { status: updates.status } : {}),
-        ...(updates.priority ? { priority: updates.priority } : {}),
-        ...(updates.assignedTo !== undefined ? { assignedTo: updates.assignedTo } : {}),
-      },
+      data,
     });
 
     if (updates.note) {
-      await prisma.leadActivity.create({
+      await prisma.leadNote.create({
         data: {
           leadId: id,
-          userId: updates.updatedBy || null,
-          activityType: 'NOTE_ADDED',
-          description: updates.note,
+          authorId: updates.updatedBy || 'admin',
+          body: updates.note,
         },
       });
     }
@@ -366,12 +369,12 @@ export async function logAuditEvent(event: {
   try {
     await prisma.auditLog.create({
       data: {
-        userId: event.userId || null,
+        actorId: event.userId || null,
         action: event.action,
-        entityType: event.entityType,
+        entity: event.entityType,
         entityId: event.entityId || null,
-        details: event.details || null,
-        ipAddress: event.ipAddress || null,
+        meta: event.details || null,
+        ip: event.ipAddress || null,
       },
     });
   } catch {
@@ -388,7 +391,7 @@ export async function getAuditLogs() {
     return await prisma.auditLog.findMany({
       take: 100,
       orderBy: { createdAt: 'desc' },
-      include: { user: { select: { fullName: true, email: true } } },
+      include: { actor: { select: { name: true, email: true } } },
     });
   } catch {
     return fallbackAuditLogs;

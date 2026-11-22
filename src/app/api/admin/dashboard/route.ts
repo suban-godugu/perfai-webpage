@@ -22,10 +22,10 @@ export async function GET() {
 
   const conversionRate = totalCount > 0 ? ((wonCount / totalCount) * 100).toFixed(1) : '0.0';
 
-  // Product distribution
+  // Product / Solution distribution
   const productDist: Record<string, number> = {};
-  leads.forEach((l) => {
-    const prod = l.productInterest || 'Unspecified';
+  leads.forEach((l: any) => {
+    const prod = (l.solutions && l.solutions.length > 0 ? l.solutions.join(', ') : l.productInterest) || 'BuildingShield';
     productDist[prod] = (productDist[prod] || 0) + 1;
   });
 

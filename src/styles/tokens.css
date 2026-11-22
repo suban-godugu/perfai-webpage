@@ -1,0 +1,43 @@
+/* Light Theme Tokens */
+:root {
+  --bg: #F6F8FB;
+  --surface: #FFFFFF;
+  --surface-2: #EEF2F7;
+  --border: #E2E8F0;
+  --text: #0B1220;
+  --text-muted: #475569;
+  --primary: #0D9488;
+  --accent: #2563EB;
+  --violet: #7C3AED;
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+
+  /* Evidence badge specifics */
+  --evidence-measured: #16A34A;
+  --evidence-modelled: #2563EB;
+  --evidence-projected: #7C3AED;
+  --evidence-indicative: #D97706;
+}
+
+/* Dark Theme Tokens (Control-room look) */
+.dark, [data-theme="dark"] {
+  --bg: #070B14;
+  --surface: #0E1626;
+  --surface-2: #141F35;
+  --border: rgba(148, 163, 184, 0.16);
+  --text: #E6EDF7;
+  --text-muted: #8EA0BA;
+  --primary: #2DD4BF;
+  --accent: #3B82F6;
+  --violet: #8B5CF6;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+
+  /* Evidence badge specifics */
+  --evidence-measured: #34D399;
+  --evidence-modelled: #3B82F6;
+  --evidence-projected: #8B5CF6;
+  --evidence-indicative: #FBBF24;
+}

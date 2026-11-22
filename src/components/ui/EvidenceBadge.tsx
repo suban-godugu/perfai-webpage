@@ -50,3 +50,4 @@ export const EvidenceBadge: React.FC<EvidenceBadgeProps> = ({ level, className =
       );
   }
 };
+

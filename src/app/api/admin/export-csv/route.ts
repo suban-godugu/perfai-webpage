@@ -25,15 +25,15 @@ export async function GET() {
     'Created At',
   ];
 
-  const rows = leads.map((l) => [
-    `"${l.leadReference}"`,
+  const rows = leads.map((l: any) => [
+    `"${l.id}"`,
     `"${l.fullName.replace(/"/g, '""')}"`,
     `"${l.email}"`,
     `"${l.phone || ''}"`,
-    `"${(l.companyName || '').replace(/"/g, '""')}"`,
-    `"${l.country || ''}"`,
-    `"${l.industry || ''}"`,
-    `"${l.productInterest || ''}"`,
+    `"${(l.organisation || l.companyName || '').replace(/"/g, '""')}"`,
+    `"${l.country || l.region || ''}"`,
+    `"${l.assetType || l.industry || ''}"`,
+    `"${(l.solutions && l.solutions.length > 0 ? l.solutions.join('; ') : l.productInterest) || ''}"`,
     `"${l.status}"`,
     `"${l.priority}"`,
     `"${l.source}"`,

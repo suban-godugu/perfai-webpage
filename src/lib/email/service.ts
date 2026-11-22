@@ -53,17 +53,14 @@ export async function sendEmailWithRetry(payload: EmailPayload, maxRetries = 2):
     }
   }
 
-  // Record delivery status in database email_logs
+  // Record delivery status in database email_logs per Blueprint §7
   try {
     await prisma.emailLog.create({
       data: {
-        recipient: payload.to,
-        subject: payload.subject,
+        to: payload.to,
         template: payload.template,
         status: sent ? 'SENT' : 'FAILED',
-        errorMessage: lastError,
-        retryCount: attempt,
-        sentAt: sent ? new Date() : null,
+        error: lastError,
       },
     });
   } catch (logErr) {

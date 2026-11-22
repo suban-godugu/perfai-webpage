@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: ["class", '[data-theme="dark"]'],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,44 +10,47 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        midnight: {
-          DEFAULT: "#101B2D",
-          dark: "#0B1320",
-          light: "#17263C"
-        },
-        deepnavy: {
-          DEFAULT: "#172B45",
-          dark: "#122238",
-          light: "#1F3A5C"
-        },
-        techblue: {
-          DEFAULT: "#2879B9",
-          hover: "#1E659D",
-          subtle: "#EAF3FB"
-        },
-        tealaccent: {
-          DEFAULT: "#27B9A2",
-          hover: "#20A28E",
-          subtle: "#E7F8F5"
-        },
-        mist: "#EAF1F7",
-        slatecustom: "#738397",
-        textdark: "#17212F"
+        bg: "var(--bg)",
+        surface: "var(--surface)",
+        "surface-2": "var(--surface-2)",
+        border: "var(--border)",
+        text: "var(--text)",
+        "text-muted": "var(--text-muted)",
+        primary: "var(--primary)",
+        accent: "var(--accent)",
+        violet: "var(--violet)",
+        success: "var(--success)",
+        warning: "var(--warning)",
+        danger: "var(--danger)",
+        // Preserve legacy tokens for backwards compatibility
+        midnight: "#070B14",
+        deepnavy: "#0E1626",
+        techblue: "#3B82F6",
+        tealaccent: "#2DD4BF",
+        mist: "#F6F8FB",
+        slatecustom: "#8EA0BA",
+        textdark: "#0B1220",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "sans-serif"],
-        heading: ["var(--font-space-grotesk)", "sans-serif"]
+        heading: ["var(--font-space-grotesk)", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+      },
+      borderRadius: {
+        input: "8px",
+        card: "12px",
+        panel: "20px",
       },
       animation: {
-        "fade-in": "fadeIn 0.5s ease-out forwards",
-        "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite"
+        "fade-in": "fadeIn 0.4s ease-out forwards",
+        "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
       keyframes: {
         fadeIn: {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" }
-        }
-      }
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
     },
   },
   plugins: [],
